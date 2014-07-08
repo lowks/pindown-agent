@@ -2,30 +2,36 @@ import cmd
 import requests
 import argparse
 import ConfigParser
-import os, errno
+import os
+import errno
 import sys
 
 default_base_path = os.path.join(os.path.expanduser("~"), '.pindown')
 
+
 def mkdir_p(path):
     try:
         os.makedirs(path)
-    except OSError as exc: # Python >2.5
+    except OSError as exc:  # Python >2.5
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
-        else: raise
+        else:
+            raise
+
 
 def prepare_base_dir(dir):
     mkdir_p(dir)
     mkdir_p(os.path.join(dir, 'run'))
     mkdir_p(os.path.join(dir, 'log'))
 
+
 def add_project():
     parser = argparse.ArgumentParser()
     parser.add_argument("project_id", help="project id")
     parser.add_argument("name", help="project name")
-    parser.add_argument('--base-dir', help='home directory for pindown to store files etc., default: ~/.pindown',
-                                      default=default_base_path)
+    parser.add_argument('--base-dir',
+                        help='home directory for pindown to store files etc., default: ~/.pindown',
+                        default=default_base_path)
     opts = parser.parse_args()
     # read our config
     config = ConfigParser.ConfigParser()
@@ -41,6 +47,7 @@ def add_project():
         config.write(configfile)
 
     print "Added project", opts.project_id
+
 
 def remove_project():
     pass
@@ -81,7 +88,7 @@ startsecs=2
     parser.add_argument('user_id', help='user id')
     parser.add_argument('uuid', help='uuid of user')
     parser.add_argument('--base-dir', help='home directory for pindown to store files etc., default: ~/.pindown',
-                                      default=default_base_path)
+                        default=default_base_path)
     opts = parser.parse_args()
     try:
         prepare_base_dir(opts.base_dir)
@@ -91,7 +98,8 @@ startsecs=2
             return
 
     # r = requests.get('http://localhost:9010/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
-    r = requests.get('http://pindown.io/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
+    r = requests.get('http://pindown.io/preshared_key/%s/%s'
+                     % (opts.user_id, opts.uuid))
     if r.status_code == 200:
         path = os.path.join(os.path.realpath(opts.base_dir), 'shared.key')
         f = open(path, 'w')
@@ -102,10 +110,15 @@ startsecs=2
         return
 
     from pindown_agent import client
-    client_executable_path = os.path.abspath(client.__file__).replace('.pyc', '.py')
+    client_executable_path = os.path.abspath(client.__file__).replace('.pyc',
+                                                                      '.py')
     python_executable_path = sys.executable
 
-    supervisorconf = supervisorconf.replace('__PYTHON__', python_executable_path).replace('__MODULE__', client_executable_path).replace('__BASE_DIR__', opts.base_dir)
+    supervisorconf = supervisorconf.replace(
+        '__PYTHON__',
+        python_executable_path).replace('__MODULE__',
+                                        client_executable_path).replace(
+                                            '__BASE_DIR__', opts.base_dir)
 
     supervisor_conf_path = os.path.join(opts.base_dir, 'supervisor.conf')
     f = open(supervisor_conf_path, 'wb')
@@ -114,16 +127,19 @@ startsecs=2
 
     print "setup completed. now you can add projects"
 
+
 def run_supervisor():
     from subprocess import Popen
     parser = argparse.ArgumentParser()
     parser.add_argument('--supervisor-path', help='path for supervisord',
-                                      default='supervisord')
+                        default='supervisord')
 
     parser.add_argument('--base-dir', help='home directory for pindown to store files etc., default: ~/.pindown',
-                                      default=default_base_path)
+                        default=default_base_path)
     opts = parser.parse_args()
     print os.path.join(opts.base_dir, 'supervisor.conf')
-    cmd = ['supervisord --configuration=%s' % os.path.join(opts.base_dir, 'supervisor.conf')]
+    cmd = ['supervisord --configuration=%s' % os.path.join(opts.base_dir,
+                                                           'supervisor.conf')]
     print "running supervisor", cmd[0]
-    proc = Popen(cmd, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+    proc = Popen(cmd, shell=True, stdin=None, stdout=None,
+                 stderr=None, close_fds=True)

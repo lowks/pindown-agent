@@ -43,7 +43,7 @@ class Connection(object):
         sys.exit(10)
 
     def heartbeat(self):
-        self.stream.write(self.wrap_data(json.dumps({'cmd':'heartbeat'})))
+        self.stream.write(self.wrap_data(json.dumps({'cmd': 'heartbeat'})))
 
     def wrap_data(self, data):
         data = self.key.Encrypt(data)
@@ -51,12 +51,12 @@ class Connection(object):
 
     def send_request(self):
         logger.debug("connecting...")
-        self.stream.write("project_ids:%s\r\n" % ','.join(self.projects) )
+        self.stream.write("project_ids:%s\r\n" % ','.join(self.projects))
         client_data = dict(
-            project_ids = ','.join(self.projects),
-            host = self.hostid,
-            identifier = self.identifier,
-            cmd = "identify"
+            project_ids=','.join(self.projects),
+            host=self.hostid,
+            identifier=self.identifier,
+            cmd="identify"
         )
         self.stream.write(self.wrap_data(json.dumps(client_data)))
         self.stream.read_until(b"\r\n", self.on_data)
@@ -78,25 +78,26 @@ class Connection(object):
         env['DEPLOY_PROJECT_NAME'] = str(payload.get('project_name'))
         env['DEPLOY_PROJECT_PATH'] = str(payload.get('project_home'))
         env['DEPLOY_BRANCH'] = str(payload.get('branch'))
-        assert payload['deploy_script'] == os.path.join(env['DEPLOY_PROJECT_PATH'], 'deploy.sh')
+        assert payload['deploy_script'] == os.path.join(
+            env['DEPLOY_PROJECT_PATH'], 'deploy.sh')
         lines = []
         p = subprocess.Popen(payload['deploy_script'], shell=True,
                              stdout=subprocess.PIPE,
                              env=env,
                              stderr=subprocess.STDOUT)
         line_id = 0
-        while p.poll() == None:
+        while p.poll() is None:
             line = p.stdout.readline()
             print line
             logger.info(line)
             if line:
                 line_id += 1
                 ret = dict(line=line,
-                            identifier=self.identifier,
-                            cmd='deploy_result',
-                            deploy_id=payload['deploy_id'],
-                            line_id=line_id,
-                            ts=time.time())
+                           identifier=self.identifier,
+                           cmd='deploy_result',
+                           deploy_id=payload['deploy_id'],
+                           line_id=line_id,
+                           ts=time.time())
                 self.stream.write(self.wrap_data(json.dumps(ret)))
         retval = p.wait()
         return {'result': 'OK+', 'retval': retval,
@@ -121,7 +122,7 @@ class Connection(object):
         logger.debug("received message [%s]", message)
         try:
             payload = json.loads(message)
-            if not 'cmd' in payload:
+            if 'cmd' not in payload:
                 self.stream.read_until(b"\r\n", self.on_data)
                 return
             ret = self.dispatch_message(payload)
@@ -132,11 +133,13 @@ class Connection(object):
             self.stream.write(self.wrap_data('error - %s' % e))
         self.stream.read_until(b"\r\n", self.on_data)
 
+
 def client():
     default_base_path = os.path.join(os.path.expanduser("~"), '.pindown')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base-dir', help='base directory of pindown_agent', default=default_base_path)
+    parser.add_argument('--base-dir', help='base directory of pindown_agent',
+                        default=default_base_path)
     args = parser.parse_args()
 
     config = ConfigParser.ConfigParser()
@@ -149,7 +152,7 @@ def client():
         logger.debug("status code for sockets list %s", r.status_code)
         socket_list = json.loads(r.content)
     except Exception as e:
-        logger.critical("cant get addresses of socket servers, please try again later: %s", url)
+        logger.critical("Can't get addresses of socket servers, please try again later: %s", url)
         logger.exception(e)
         return
 
@@ -166,8 +169,10 @@ def client():
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
     stream = tornado.iostream.IOStream(s)
-    conn = Connection(stream, args.base_dir, config, hostid, identifier=identifier)
-    stream.connect((socket_list[0]['ip'], socket_list[0]['port']), conn.send_request)
+    conn = Connection(stream, args.base_dir, config,
+                      hostid, identifier=identifier)
+    stream.connect((socket_list[0]['ip'], socket_list[0]['port']),
+                   conn.send_request)
 
     scheduler = tornado.ioloop.PeriodicCallback(conn.heartbeat, 10000)
     scheduler.start()

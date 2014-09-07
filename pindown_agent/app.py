@@ -4,6 +4,7 @@ import argparse
 import ConfigParser
 import os, errno
 import sys
+from subprocess import Popen, check_output
 
 default_base_path = os.path.join(os.path.expanduser("~"), '.pindown')
 
@@ -74,7 +75,8 @@ stdout_logfile=__BASE_DIR__/log/pindown-agent.log
 stderr_logfile=__BASE_DIR__/log/pindown-agent.err
 priority=999
 startsecs=2
-    """
+startretries=9999999
+"""
 
     # TODO: warn if basedir exists
     parser = argparse.ArgumentParser()
@@ -90,8 +92,8 @@ startsecs=2
             print "ERROR: Permission denied for base path, are you sure you have write access ? maybe need to run with sudo"
             return
 
-    # r = requests.get('http://localhost:9010/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
-    r = requests.get('http://pindown.io/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
+    r = requests.get('http://localhost:9010/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
+    # r = requests.get('http://pindown.io/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
     if r.status_code == 200:
         path = os.path.join(os.path.realpath(opts.base_dir), 'shared.key')
         f = open(path, 'w')
@@ -115,7 +117,6 @@ startsecs=2
     print "setup completed. now you can add projects"
 
 def run_supervisor():
-    from subprocess import Popen
     parser = argparse.ArgumentParser()
     parser.add_argument('--supervisor-path', help='path for supervisord',
                                       default='supervisord')
@@ -126,4 +127,42 @@ def run_supervisor():
     print os.path.join(opts.base_dir, 'supervisor.conf')
     cmd = ['supervisord --configuration=%s' % os.path.join(opts.base_dir, 'supervisor.conf')]
     print "running supervisor", cmd[0]
+    print "you can stop/start agent with command"
+    print "supervisorctl -c %s" % os.path.join(opts.base_dir, 'supervisor.conf')
     proc = Popen(cmd, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+
+def stop_agent():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--supervisor-path', help='path for supervisord',
+                                      default='supervisord')
+
+    parser.add_argument('--base-dir', help='home directory for pindown to store files etc., default: ~/.pindown',
+                                      default=default_base_path)
+    opts = parser.parse_args()
+    print os.path.join(opts.base_dir, 'supervisor.conf')
+    cmd = ['supervisorctl --configuration=%s stop pindown_agent' % os.path.join(opts.base_dir, 'supervisor.conf')]
+    print check_output(cmd, shell=True, stdin=None, stderr=None, close_fds=True)
+
+def start_agent():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--supervisor-path', help='path for supervisord',
+                                      default='supervisord')
+
+    parser.add_argument('--base-dir', help='home directory for pindown to store files etc., default: ~/.pindown',
+                                      default=default_base_path)
+    opts = parser.parse_args()
+    print os.path.join(opts.base_dir, 'supervisor.conf')
+    cmd = ['supervisorctl --configuration=%s start pindown_agent' % os.path.join(opts.base_dir, 'supervisor.conf')]
+    print check_output(cmd, shell=True, stdin=None, stderr=None, close_fds=True)
+
+def restart_agent():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--supervisor-path', help='path for supervisord',
+                                      default='supervisord')
+
+    parser.add_argument('--base-dir', help='home directory for pindown to store files etc., default: ~/.pindown',
+                                      default=default_base_path)
+    opts = parser.parse_args()
+    print os.path.join(opts.base_dir, 'supervisor.conf')
+    cmd = ['supervisorctl --configuration=%s restart pindown_agent' % os.path.join(opts.base_dir, 'supervisor.conf')]
+    print check_output(cmd, shell=True, stdin=None, stderr=None, close_fds=True)

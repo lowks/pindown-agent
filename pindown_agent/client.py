@@ -38,8 +38,10 @@ class Connection(object):
         connection closed, reconnect or die ??
         we die, upstart or supervisor or whatever should restart us
         '''
-        print "connection closed, exiting"
+        print "connection closed, will exit in 10 seconds"
         tornado.ioloop.IOLoop.instance().stop()
+        time.sleep(10)
+        print "exiting now"
         sys.exit(10)
 
     def heartbeat(self):
@@ -144,9 +146,10 @@ def client():
     config.read(cfg_path)
 
     url = "https://pindown.io/servers/%s" % ','.join(config.sections())
+    # url = "http://localhost:9010/servers/%s" % ','.join(config.sections())
     try:
         r = requests.get(url)
-        logger.debug("status code for sockets list %s", r.status_code)
+        logger.debug("status code for sockets list %s - url:%s", r.status_code, url)
         socket_list = json.loads(r.content)
     except Exception as e:
         logger.critical("cant get addresses of socket servers, please try again later: %s", url)

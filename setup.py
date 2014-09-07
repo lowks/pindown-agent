@@ -5,6 +5,7 @@ setup(
     license="BSD",
     version='0.2.2',
     long_description=__doc__,
+    description='pindown.io agent',
     packages=['pindown_agent'],
     include_package_data=True,
     zip_safe=False,

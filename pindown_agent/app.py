@@ -92,8 +92,8 @@ startretries=9999999
             print "ERROR: Permission denied for base path, are you sure you have write access ? maybe need to run with sudo"
             return
 
-    r = requests.get('http://localhost:9010/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
-    # r = requests.get('http://pindown.io/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
+    # r = requests.get('http://localhost:9010/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
+    r = requests.get('http://pindown.io/preshared_key/%s/%s' % (opts.user_id, opts.uuid))
     if r.status_code == 200:
         path = os.path.join(os.path.realpath(opts.base_dir), 'shared.key')
         f = open(path, 'w')
@@ -165,4 +165,16 @@ def restart_agent():
     opts = parser.parse_args()
     print os.path.join(opts.base_dir, 'supervisor.conf')
     cmd = ['supervisorctl --configuration=%s restart pindown_agent' % os.path.join(opts.base_dir, 'supervisor.conf')]
+    print check_output(cmd, shell=True, stdin=None, stderr=None, close_fds=True)
+
+def agent_status():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--supervisor-path', help='path for supervisord',
+                                      default='supervisord')
+
+    parser.add_argument('--base-dir', help='home directory for pindown to store files etc., default: ~/.pindown',
+                                      default=default_base_path)
+    opts = parser.parse_args()
+    print os.path.join(opts.base_dir, 'supervisor.conf')
+    cmd = ['supervisorctl --configuration=%s status pindown_agent' % os.path.join(opts.base_dir, 'supervisor.conf')]
     print check_output(cmd, shell=True, stdin=None, stderr=None, close_fds=True)

@@ -20,6 +20,7 @@ setup(
             'pindown_agent_stop = pindown_agent.app:stop_agent',
             'pindown_agent_start = pindown_agent.app:start_agent',
             'pindown_agent_restart = pindown_agent.app:restart_agent',
+            'pindown_agent_status = pindown_agent.app:agent_status',
             'pindown_agent_add_project = pindown_agent.app:add_project',
         ],
     }
